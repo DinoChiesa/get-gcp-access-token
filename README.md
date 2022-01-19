@@ -62,7 +62,7 @@ Follow these steps:
 
 8. name it, and create it.
 
-9. Download the JSON for the client. The result is something like this:
+9. Download the JSON for the client into a credentials file. The result is something like this:
    ```json
    {
      "installed": {
@@ -80,7 +80,7 @@ Follow these steps:
    }
    ```
 
-9. invoke the script:
+9. invoke the script, specifying the credentials file you downloaded:
    ```
    cd getTokenWithUserAuth
    npm install
@@ -88,16 +88,34 @@ Follow these steps:
        --client_credentials ./downloaded-client-config-file.json
    ```
 
-9. The script should open a browser tab and ask you to sign in with Google, and
-   then grant consent.  When you paste in the one-time code into the terminal,
-   you'll get a token back.
+9. The script should open a browser tab and ask you to sign in with
+   Google.
 
-   You can then use that token as a Bearer token in API calls to *.googleapis.com .
+   ![Example](./images/sign-in-with-google.png)
+
+   After you sign-in, the web UI will ask you to grant consent with a
+   similar-looking dialog.  When you consent, the Web UI will generate and
+   display a single-use authorization code. Copy that one-time code to
+   your clipboard, then paste it into the still-running script in your
+   terminal. When you press `RETURN`, the script posts to
+   `https://oauth2.googleapis.com/token`, and receives a token in response. The
+   response looks like this:
+
+   ```json
+   {
+     "access_token": "ya29.c.b0AXv0zTPIXDh-FGN_hM4e....jN8H3fp50U............",
+     "expires_in": 3599,
+     "token_type": "Bearer"
+   }
+   ```
+
+   You can then use that token as a Bearer token in API calls to `*.googleapis.com` .
 
 
 ## getTokenWithServiceAccount
 
-To set up, you need a service account JSON file containing the private key of the service account.
+To set up, you need a service account JSON file containing the private key of
+the service account.
 
 Follow these steps:
 
@@ -154,6 +172,8 @@ Follow these steps:
      "token_type": "Bearer"
    }
    ```
+
+   You can then use that token as a Bearer token in API calls to `*.googleapis.com` .
 
 ## Disclaimer
 
