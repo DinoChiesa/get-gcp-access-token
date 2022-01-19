@@ -109,7 +109,9 @@ Follow these steps:
    }
    ```
 
-   You can then use that token as a Bearer token in API calls to `*.googleapis.com` .
+   You can then use that token as a Bearer token in API calls to
+   `*.googleapis.com` , subject to the roles and permissions the authenticated
+   user has.
 
 
 ## getTokenWithServiceAccount
@@ -173,7 +175,9 @@ Follow these steps:
    }
    ```
 
-   You can then use that token as a Bearer token in API calls to `*.googleapis.com` .
+   You can then use that token as a Bearer token in API calls to
+   `*.googleapis.com` , subject to the roles and permissions the service account
+   has.
 
 ## Disclaimer
 
