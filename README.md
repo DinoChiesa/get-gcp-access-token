@@ -1,4 +1,4 @@
-# Examples Get a GCP Access Token
+# Examples: How to Get a GCP Access Token
 
 This repo contains examples that illustrate how to get a GCP access token from code.
 
@@ -27,13 +27,17 @@ There are currently two examples:
   based on service account authentication. This requires a service account .json
   file, containing the private key of the service account.
 
-The two methods are intended for different purposes, and you should take care to
-decide which one to use, carefully. If in doubt review your use case with your
-security architect. In a typical case, a CI/CD pipeline might use a service
-account. But if you're just automating Google things (including
-apigee.googleapis.com) for your own purposes you probably want to use the human
-authentication to get the token. Regardless which case you use, the result is an
-OAuth token, which looks and works the same after you acquire it.
+Both of these examples require a recent version of
+[node](https://nodejs.org/en/) (which should include npm).
+
+The two methods for acquiring tokens are intended for different purposes, and
+you should take care to decide which one to use, carefully. If you are in doubt
+review your use case with your security architect. In a typical case, a CI/CD
+pipeline might use a service account. But if you're just automating Google
+things (including apigee.googleapis.com) for your own purposes you probably want
+to use the human authentication to get the token. Regardless which case you use,
+the result is an OAuth token, which looks and works the same after you acquire
+it.
 
 ## getTokenWithUserAuth
 
@@ -79,14 +83,16 @@ Follow these steps:
 9. invoke the script:
    ```
    cd getTokenWithUserAuth
+   npm install
    node ./getTokenWithUserAuth.js -v --nostash \
        --client_credentials ./downloaded-client-config-file.json
    ```
 
-9. The script should open a browser tab and ask you to grant consent.
-   When you paste in the one-time code into the terminal, you'll get a token
-   back.
+9. The script should open a browser tab and ask you to sign in with Google, and
+   then grant consent.  When you paste in the one-time code into the terminal,
+   you'll get a token back.
 
+   You can then use that token as a Bearer token in API calls to *.googleapis.com .
 
 
 ## getTokenWithServiceAccount
@@ -135,6 +141,7 @@ Follow these steps:
 9. invoke the node script using that key
    ```
    cd getTokenWithServiceAccount
+   npm install
    node ./getTokenWithServiceAccount.js -v  --keyfile ~/Downloads/my-service-account-key.json
    ```
 
