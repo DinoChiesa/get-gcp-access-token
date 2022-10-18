@@ -2,12 +2,10 @@
 // ------------------------------------------------------------------
 //
 // created: Thu Nov  7 09:01:30 2019
-// last saved: <2022-January-18 16:22:26>
+// last saved: <2022-October-17 17:29:37>
 
 /* jshint esversion:9, node:true, strict:implied */
 /* global process, console, Buffer */
-
-// This works. The token stash is indexed with the concatenation of the clientid and the user id.
 
 const util           = require('util'),
       https          = require('https'),
@@ -15,11 +13,13 @@ const util           = require('util'),
       open           = require('open'),
       fs             = require('fs'),
       path           = require('path'),
-      readline       = require('readline'),
       querystring    = require('querystring'),
+      // The token stash is indexed with the concatenation of the clientid and the user id.
       tokenStashPath = resolveTilde('~/.gcp-token-stash.json'),
       REQUIRED_SCOPES = ['https://www.googleapis.com/auth/cloud-platform', 'email'],
-      OOB_REDIRECT   = 'urn:ietf:wg:oauth:2.0:oob';
+      //LOOPBACK_REDIRECT   = 'urn:ietf:wg:oauth:2.0:oob';
+      LOCAL_HTTP_LISTENER_PORT = 11890,
+      LOOPBACK_REDIRECT   = `http://127.0.0.1:${LOCAL_HTTP_LISTENER_PORT}`;
 
 function randomString(L) {
   L = L || 18;
@@ -104,14 +104,14 @@ function exchangeCodeForToken(options, code) {
           code,
           client_id: options.clientCredentials.client_id,
           client_secret: options.clientCredentials.client_secret,
-          redirect_uri: OOB_REDIRECT,
+          redirect_uri: LOOPBACK_REDIRECT,
           grant_type:'authorization_code'
         };
   return formRequest(options, options.clientCredentials.token_uri,
                      formParams);
 }
 
-const getStashKey = (options) => options.clientCredentials.client_id + '##' + options.user;
+const getStashKey = (options) => options.user && (options.clientCredentials.client_id + '##' + options.user);
 
 function refreshToken(options, stashed) {
   let formParams = {
@@ -129,23 +129,93 @@ function refreshToken(options, stashed) {
 
 function newAuthorization(options) {
   console.log('\nYou must authorize this app before using it.\n');
-  console.log('This script will now open a browser tab. After granting consent, you will');
-  console.log('receive a one-time code. Return here and paste it in, to continue....\n');
+  console.log('This script will now open a browser tab. After you grant consent, ');
+  console.log('return here and you will see the access token.\n');
 
   // https://accounts.google.com/o/oauth2/v2/auth?
   //  scope=email%20profile&
   //  response_type=code&
   //  state=security_token%3D138r5719ru3e1%26url%3Dhttps%3A%2F%2Foauth2.example.com%2Ftoken&
-  //  redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&
+  //  redirect_uri=http://127.0.0.1:PORT&
   //  client_id=client_id
 
+  const startLocalHttpServer = () =>
+  new Promise((resolve,reject) => {
+    const http = require('http');
+    const stoppable = require('stoppable');
+    const requestHandler = (request, response) => {
+            const url = require('url');
+            // eg,
+            // url: '/?state=a7n22mglioio7xexnd&code=4/0ARtbsbAALw&scope=email%20https://www.googleapis.com/auth/cloud-platform%20https://www.googleapis.com/auth/userinfo.email%20openid&authuser=0&hd=dchiesa.altostrat.com&prompt=consent';
+            let u = url.parse(request.url);
+            if (u.query && !server.retrievedQuery) {
+              server.retrievedQuery = querystring.parse(u.query);
+              if (options.verbose) {
+                logWrite(`retrieved query:\n` + JSON.stringify(server.retrievedQuery, null, 2));
+              }
+              response.writeHead(302, { 'Location': '/ok' });
+              return response.end();
+            }
+
+            response.writeHead(200, { 'content-type': 'text/html'});
+            response.write('<!DOCTYPE html>\n<html><body><h1>OK. You can now close this browser tab.</h1></body></html>');
+            response.end();
+          };
+    const server = stoppable(http.createServer(requestHandler), 10);
+    server.listen(LOCAL_HTTP_LISTENER_PORT);
+    resolve(server);
+  });
+
+  const stopLocalHttpServer = (server, cb) => {
+          if (server) {
+            server.stop((e, g) => {
+              gracefully = g;
+              cb(server);
+            });
+          }
+          return cb(null);
+        };
+
+  let timerControl = {};
+  const cycleTime = 300;
+  const waitForPredicate = (predicate, waitLimit, cb, controlKey) => {
+          controlKey = controlKey || Math.random().toString(36).substring(2,15);
+
+          let control = timerControl[controlKey];
+          let found = predicate();
+
+          if (found) {
+            if (control && control.interval) {
+              clearInterval(control.interval);
+              delete timerControl[controlKey];
+            }
+            return cb(found);
+          }
+
+          if ( ! control) {
+            let interval = setInterval ( function () {
+              waitForPredicate(predicate, waitLimit, cb, controlKey);
+                }, cycleTime);
+            timerControl[controlKey] = { interval, totalWaited:0 };
+          }
+          else {
+            timerControl[controlKey].totalWaited += cycleTime;
+            if (timerControl[controlKey].totalWaited > waitLimit) {
+              clearInterval(control.interval);
+              delete timerControl[controlKey];
+              return cb(null);
+            }
+          }
+        };
+
   return sleep(4200)
-    .then(() => {
+    .then(startLocalHttpServer)
+    .then(localServer => {
       const qparams = {
               scope: REQUIRED_SCOPES.join(' '),
               response_type: 'code',
               state: randomString(),
-              redirect_uri: OOB_REDIRECT,
+              redirect_uri: LOOPBACK_REDIRECT,
               client_id : options.clientCredentials.client_id
             };
       const authUrl = options.clientCredentials.auth_uri + '?' + querystring.stringify(qparams);
@@ -154,16 +224,27 @@ function newAuthorization(options) {
         logWrite(`opening ${authUrl} ...`);
       }
       open(authUrl, {wait: false});
-      return new Promise((resolve, reject) => {
-        const rl = readline.createInterface({
-                input: process.stdin,
-                output: process.stdout
-              });
-        rl.question('Paste the one-time-code: ', (code) => {
-          rl.close();
-          resolve(exchangeCodeForToken(options, code));
-        });
-      });
+      const SECONDS_TO_WAIT_FOR_USER = 20;
+      return sleep(3200)
+        .then ( () =>
+                new Promise((resolve, reject) => {
+                  let predicate = () => localServer && localServer.retrievedQuery;
+
+                  waitForPredicate(predicate, SECONDS_TO_WAIT_FOR_USER * 1000, (retrievedQuery) => {
+                    stopLocalHttpServer(localServer, () => {
+                      if (retrievedQuery && retrievedQuery.code) {
+                        resolve(exchangeCodeForToken(options, retrievedQuery.code));
+                      }
+                      else {
+                        reject(new Error('Timed out waiting for code'));
+                      }
+                    });
+                  });
+                })
+                .catch(e => {
+                  console.log(e);
+                  return stopLocalHttpServer(localServer,  () => {});
+                }));
     });
 }
 
@@ -235,12 +316,21 @@ function getCredential(options) {
   return getTokenStash(options)
     .then(stashed => {
       let key = getStashKey(options);
-      if (stashed[key]) {
+      if (key && stashed[key]) {
         // If we have an access_token, let's just unilaterally try to refresh it.
-        // There's an expiry, but ... not a huge cost to just refreshing.
+        // There's an expiry, but ... not a huge cost to just try to refresh.
         return refreshToken(options, stashed[key]);
       }
       return newAuthorization(options);
+    })
+    .then(tokenResponse => {
+      if (tokenResponse.id_token) {
+        // get the user from here
+        let parts = tokenResponse.id_token.split('.', 3);
+        options.user =
+          JSON.parse(Buffer.from(parts[1],'base64').toString('utf-8')).email;
+      }
+      return tokenResponse;
     })
     .then(stashToken(options));
 }
@@ -288,6 +378,7 @@ function processArgs(args) {
           break;
         case '-h':
         case '--help':
+          options.help = true;
           return;
         default:
           throw new Error('unexpected argument: ' + arg);
@@ -308,6 +399,7 @@ function usage() {
   console.log(`  options:`);
   console.log(`    --nostash    do not use (read or write) the token stash file\n` +
               `    --user USER  specify the user to stash the token for. Used only if not --nostash\n` +
+              `    --help       show this.\n` +
               `    --verbose    you know.\n`);
 
 }
@@ -315,7 +407,10 @@ function usage() {
 function main(args) {
   try {
     let options = processArgs(args);
-    if (options && options.credsFile) {
+    if (options && options.help) {
+      usage();
+    }
+    else if (options && options.credsFile) {
       options.credsFile = path.resolve(resolveTilde(options.credsFile));
       if ( ! fs.existsSync(options.credsFile)) {
         console.log("That file does not exist");

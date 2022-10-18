@@ -49,18 +49,17 @@ Follow these steps:
 
 2. select your desired "project".  Service accounts are maintained within the scope of a GCP project.
 
-
 3. Using the left-hand-side, Navigate to "APIs & Services".
 
-4. Again using the LHS nav, Click "Credentials"
+4. Again using the LHS nav, Click "Credentials" (You may need to configure the OAuth Consent Screen to allow this all to happen)
 
 5. at the top of the page, click "+ CREATE CREDENTIAL"
 
 6. click "OAuth client ID"
 
-7. Specify "Desktop app"
+7. Specify "Desktop app".
 
-8. name it, and create it.
+8. name it, and create it. Register at least one user for this app.
 
 9. Download the JSON for the client into a credentials file. The result is something like this:
    ```json
@@ -73,7 +72,6 @@ Follow these steps:
        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
        "client_secret": "GOX-DMAJZkF9hN-wyL_wvRO",
        "redirect_uris": [
-         "urn:ietf:wg:oauth:2.0:oob",
          "http://localhost"
        ]
      }
@@ -84,7 +82,7 @@ Follow these steps:
    ```
    cd getTokenWithUserAuth
    npm install
-   node ./getTokenWithUserAuth.js -v --nostash \
+   node ./getTokenWithUserAuth.js -v  \
        --client_credentials ./downloaded-client-config-file.json
    ```
 
@@ -94,22 +92,22 @@ Follow these steps:
    ![Example](./images/sign-in-with-google.png)
 
    After you sign-in, the web UI will ask you to grant consent with a
-   similar-looking dialog.  When you consent, the Web UI will generate and
-   display a single-use authorization code. Copy that one-time code to
-   your clipboard, then paste it into the still-running script in your
-   terminal. When you press `RETURN`, the script posts to
-   `https://oauth2.googleapis.com/token`, and receives a token in response. The
-   response looks like this:
+   similar-looking dialog.  When you consent, the Google token service will
+   generate and return a single-use authorization code to the script. The web
+   page will show a page reading: "OK. You can now close this browser tab."
+
+   The script will exchange the code for a token.  The response looks like this:
 
    ```json
    {
      "access_token": "ya29.c.b0AXv0zTPIXDh-FGN_hM4e....jN8H3fp50U............",
      "expires_in": 3599,
-     "token_type": "Bearer"
+     "token_type": "Bearer",
+      ...
    }
    ```
 
-   You can then use that token as a Bearer token in API calls to
+   You can then use that access_token as a Bearer token in API calls to
    `*.googleapis.com` , subject to the roles and permissions the authenticated
    user has.
 
