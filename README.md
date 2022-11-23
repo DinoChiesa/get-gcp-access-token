@@ -2,7 +2,7 @@
 
 This repo contains examples that illustrate how to get a GCP access token programmatically.
 
-## What does a token look like:
+## What does a token look like?
 
 There are different ways to get a token, but regardless of the way you choose, the token always looks similar.
 
@@ -90,12 +90,15 @@ downloaded service-account key file.  Rather than `gcloud auth login`, use
 auth print-access-token`.  The token will look the same as shown above, and can be used in the same way.
 
 
-## Getting a token using your own code. 
+## Getting a token using your own code.
 
-In some cases you may want to get a token without relying on gcloud, and your code may not be running in GCE. 
+In some cases you may want to get a token without relying on gcloud, and your code may not be running in GCE.
 
-The code in this repository just shows how this is possible. It will show what endpoints to use, How to
-request the right scopes, what credentials are necessary, and so on.
+The code in this repository just shows how this is possible. It will show what
+endpoints to use, How to request the right scopes, what credentials are
+necessary, and so on. I don't have any insight into how gcloud is implemented,
+but I am certain that gcloud invokes the same endpoints these example programs
+use, to get tokens.
 
 Initially the examples will use nodejs and the builtin `https` module.
 I may add more examples later, maybe other languages and so on, as time permits.
@@ -109,7 +112,7 @@ I hope the code here will be valuable in two ways:
    start from this working example and buid code for other scripting
    environments or platforms. Powershell, python, and etc.
 
-There are currently two examples:
+There are currently two examples here:
 
 * **getTokenWithUserAuth** - gets an OAuth token usable with Google APIs, based
   on user authentication. This uses a client that must be registered with Google
@@ -126,10 +129,10 @@ The two methods for acquiring tokens are intended for different purposes, and
 you should take care to decide which one to use, carefully. If you are in doubt
 review your use case with your security architect. In a typical case, a CI/CD
 pipeline might use a service account. But if you're just automating Google
-things (including apigee.googleapis.com) for your own purposes you probably want
-to use the human authentication to get the token. Regardless which case you use,
-the result is an OAuth token, which looks and works the same after you acquire
-it.
+things (including apigee.googleapis.com) for your own purposes, for example via
+a script you run from your own terminal, you probably want to use the human
+authentication to get the token. Regardless which case you use, the result is an
+OAuth token, which looks and works the same after you acquire it.
 
 ## getTokenWithUserAuth
 
@@ -173,7 +176,7 @@ To get a client credential, follow these one-time steps:
    ```
 
 
-That is all one-time work.  Now, to get a token , you can do the following as many times as you like: 
+That is all one-time work.  Now, to get a token , you can do the following as many times as you like:
 
 1. invoke the script, specifying the credentials file you downloaded:
    ```
