@@ -1,12 +1,104 @@
 # Examples: How to Get a GCP Access Token
 
-This repo contains examples that illustrate how to get a GCP access token from code.
+This repo contains examples that illustrate how to get a GCP access token programmatically.
 
-The goal is to just show how it is possible. What endpoints to use, How to
+## What does a token look like:
+
+There are different ways to get a token, but regardless of the way you choose, the token always looks similar.
+
+It will look like:
+
+```
+ya29.a0AeTM1i..many..many..characters...CCePCQ0174
+```
+
+Google hasn't documented that officially as the structure of the token. In fact,
+the most you can rely on is that the token will be a string of characters. The above example
+has been the basic structure, for a long while now.
+
+There is no way to "decode" that token on your own.  It's just an opaque string
+of characters to you. To decode it you need to send it to a Googleapis endpoint
+that knows what to do with it.
+
+
+## What are tokens good for?
+
+An access token is required to invoke calls on any endpoint on
+googleapis.com. To configure or administer any service in GCP, you need to send
+REST calls to googleapis.com .  The endpoints for the various services are
+distinct.  For example:
+
+| service        | endpoint                |
+|----------------|-------------------------|
+| Compute Engine | compute.googleapis.com  |
+| Storage        | storage.googleapis.com  |
+| Apigee         | apigee.googleapis.com   |
+| BigQuery       | bigquery.googleapis.com |
+| Logging        | logging.googleapis.com  |
+| and so on..... |                         |
+
+
+This is just standard Google Cloud stuff. Even with Apigee hybrid, in which the
+gateways can run externally to Google cloud (let's say in AWS EKS), the control
+plane is in Google Cloud, and you must configure Apigee hybrid by interacting
+with the control plane endpoint at apigee.googleapis.com. In all cases, you need
+that access token to authorize the call.
+
+If you are using curl, you should pass the token as a bearer token, in the Authorization header, like so:
+
+```sh
+curl -i -H "Authorization: Bearer $TOKEN" https://SERVICE.googleapis.com/url/path
+```
+
+
+## Three Ways to Get a Token
+
+There are three ways to get an access token for services within GCP:
+
+1. via interactive user login
+2. via a service-account key and a special OAuthV2 grant
+3. via a "shortcut", using the metadata endpoint for Google Compute Engine.
+
+## The Metadata endpoint
+
+The last way is the simplest: send a GET request to an endpoint and get a token back. Like this:
+```
+curl "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" \
+-H "Metadata-Flavor: Google"
+```
+
+But the catch is, this works if and only if the command is run from a Google
+Compute Engine instance. It gets a token for the service account which is used
+by the GCE instance.  You do not need to create or download a service account
+key file for this to work.  This call won't work if you try invoking that
+endpoint from your laptop, or a build server that runs outside of GCP.
+
+
+## The other ways, via gcloud
+
+The easiest way to get a GCP access token _for yourself_ is via the [gcloud
+command-line tool](https://cloud.google.com/sdk/gcloud).  Install the tool, then
+invoke `gcloud auth login` followed by `gcloud auth print-access-token`.  You
+will see the access token, which you can then use in curl commands, or in
+postman, to tickle the various endpoints under googleapis.com .
+
+
+You can also use gcloud to get a token on behalf of a service account, using a
+downloaded service-account key file.  Rather than `gcloud auth login`, use
+`gcloud auth activate-service-account SERVICE_ACCOUNT@DOMAIN.COM
+--key-file=/path/key.json` and then again print the access token with `gcloud
+auth print-access-token`.  The token will look the same as shown above, and can be used in the same way.
+
+
+## Getting a token using your own code. 
+
+In some cases you may want to get a token without relying on gcloud, and your code may not be running in GCE. 
+
+The code in this repository just shows how this is possible. It will show what endpoints to use, How to
 request the right scopes, what credentials are necessary, and so on.
 
 Initially the examples will use nodejs and the builtin `https` module.
-I may add more examples later as time permits.
+I may add more examples later, maybe other languages and so on, as time permits.
 
 I hope the code here will be valuable in two ways:
 
@@ -41,9 +133,11 @@ it.
 
 ## getTokenWithUserAuth
 
-To set this up, you need a client credential.
+This shows case 1 from above - getting a token for an authenticated user.
 
-Follow these steps:
+To set this up, you need to set up a client credential. (When using gcloud, as described above, gcloud employs its own client credential.)
+
+To get a client credential, follow these one-time steps:
 
 1. visit console.cloud.google.com
 
@@ -78,7 +172,10 @@ Follow these steps:
    }
    ```
 
-9. invoke the script, specifying the credentials file you downloaded:
+
+That is all one-time work.  Now, to get a token , you can do the following as many times as you like: 
+
+1. invoke the script, specifying the credentials file you downloaded:
    ```
    cd getTokenWithUserAuth
    npm install
@@ -86,7 +183,7 @@ Follow these steps:
        --client_credentials ./downloaded-client-config-file.json
    ```
 
-9. The script should open a browser tab and ask you to sign in with
+2. The script should open a browser tab and ask you to sign in with
    Google.
 
    ![Example](./images/sign-in-with-google.png)
@@ -114,10 +211,12 @@ Follow these steps:
 
 ## getTokenWithServiceAccount
 
+This shows case 2 from above - getting a token for a service account.
+
 To set up, you need a service account JSON file containing the private key of
 the service account.
 
-Follow these steps:
+Follow these steps for the one-time setup:
 
 1. visit console.cloud.google.com
 
@@ -156,7 +255,10 @@ Follow these steps:
    }
    ```
 
-9. invoke the node script using that key
+
+That is all one-time setup stuff. Now, as often as you need to create a token, run these steps:
+
+1. invoke the node script specifying the downloaded key file
    ```
    cd getTokenWithServiceAccount
    npm install
@@ -176,6 +278,8 @@ Follow these steps:
    You can then use that token as a Bearer token in API calls to
    `*.googleapis.com` , subject to the roles and permissions the service account
    has.
+
+
 
 ## Disclaimer
 
