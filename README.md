@@ -345,23 +345,25 @@ That is all one-time setup stuff. Now, as often as you need to create a token, r
 
 ## (dotnet) GetAccessTokenForServiceAccount
 
-The pre-req here is the dotnet SDK.  Install that on your machine. On MacOS, I
+The pre-req here is the dotnet SDK, v7 or later.  Install that on your machine. On MacOS, I
 did this via homebrew:
 
 ```
 brew install --cask dotnet-sdk
 ```
 
-Then, do the same setup as is described for the nodejs example for service
-accounts above. You need the service account key json file. If you've already
-done it for the nodejs example, you do not need to repeat that setup to use the
-dotnet app.
+On Windows, I just downloaded the .NETSDK v7.0 and installed it.
 
-Then, build and run the app:
+Then, do the same setup as is described for the nodejs example for service
+accounts above. You need to generate a service account key json file. If you've
+already done it for the nodejs example, you do not need to repeat that setup to
+use the dotnet app.
+
+Then, build and run the app. Follow these steps. I tested this on MacOS and Windows.
 
 1. verify your dotnet version
    ```
-   cd dotnetcore/GetAccessTokenForServiceAccount
+   cd dotnet/GetAccessTokenForServiceAccount
    dotnet --version
    ```
 
@@ -369,9 +371,10 @@ Then, build and run the app:
 
 2. install pre-requisites
    ```
-   dotnet add package Microsoft.IdentityModel.JsonWebTokens
-   dotnet add package System.Security.Cryptography.Algorithms
+   dotnet add package System.IdentityModel.Tokens.Jwt
    ```
+
+   Make sure this part succeeds before proceeding.
 
 2. build
    ```
@@ -382,7 +385,7 @@ Then, build and run the app:
 
 3. run
    ```
-   bin/Debug/netcoreapp3.1/Get-GCP-Token  --sakeyfile ~/Downloads/my-downloaded-key-file.json
+   bin/Debug/net7.0/Get-GCP-Token  --sakeyfile ~/Downloads/my-downloaded-key-file.json
    ```
 
    The result should be a token:
@@ -401,7 +404,7 @@ Then, build and run the app:
    ..then you may be able to avoid that by invoking the command with the `--roll-forward` option:
 
    ```
-   bin/Debug/netcoreapp3.1/Get-GCP-Token \
+   bin/Debug/net7.0/Get-GCP-Token \
      --roll-forward \
      --sakeyfile ~/Downloads/my-downloaded-key-file.json
    ```
