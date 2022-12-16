@@ -12,13 +12,11 @@ It will look like:
 ya29.a0AeTM1i..many..many..characters...CCePCQ0174
 ```
 
-Google hasn't documented that officially as the structure of the token. In fact,
-the most you can rely on is that the token will be a string of characters. The above example
-has been the basic structure, for a long while now.
-
-There is no way to "decode" that token on your own.  It's just an opaque string
-of characters to you. To decode it you need to send it to a Googleapis endpoint
-that knows what to do with it.
+As far as I know, Google hasn't documented that officially as the structure of
+the token. It is _opaque_. In fact, the most you can rely on is that the token
+will be a string of characters. The above example, a string of characters that
+begins with `ya29.`, has been the basic structure, for a long while now. But
+there's no guarantee that will continue.
 
 
 ## What are tokens good for?
@@ -50,6 +48,49 @@ If you are using curl, you should pass the token as a bearer token, in the Autho
 curl -i -H "Authorization: Bearer $TOKEN" https://SERVICE.googleapis.com/url/path
 ```
 
+## Decoding tokens
+
+There is no way to "decode" that token on your own.  It's just an opaque string
+of characters to you. To use it, you need to send it to a googleapis.com endpoint
+that knows what to do with it.
+
+You can send the access token to the googleapis tokeninfo endpoint to ask Google
+to tell you about it.  This looks like so:
+
+```
+curl -i https://www.googleapis.com/oauth2/v3/tokeninfo\?access_token=$TOKEN
+```
+
+For a user-based access token, the response will give expiry, email, audience, scope, etc. Like so: 
+```
+{
+  "azp": "32555940559.apps.googleusercontent.com",
+  "aud": "32555940559.apps.googleusercontent.com",
+  "sub": "112026411584569361827",
+  "scope": "openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/appengine.admin https://www.googleapis.com/auth/sqlservice.login https://www.googleapis.com/auth/compute https://www.googleapis.com/auth/accounts.reauth",
+  "exp": "1670604242",
+  "expires_in": "3320",
+  "email": "person@zone.example.com",
+  "email_verified": "true",
+  "access_type": "offline"
+}
+```
+
+For an access token granted to a service-account, the response will be like this: 
+
+```
+{
+  "azp": "102362795548081388936",
+  "aud": "102362795548081388936",
+  "scope": "https://www.googleapis.com/auth/cloud-platform",
+  "expires_in": 3551,
+  "access_type": "online"
+}
+```
+
+The aud, sub, and azp attributes just identify the audience, subject, and
+authorized party. Those are unique IDs for the Google Cloud platform, for that
+particular principal.
 
 ## Three Ways to Get a Token
 
@@ -87,18 +128,21 @@ You can also use gcloud to get a token on behalf of a service account, using a
 downloaded service-account key file.  Rather than `gcloud auth login`, use
 `gcloud auth activate-service-account SERVICE_ACCOUNT@DOMAIN.COM
 --key-file=/path/key.json` and then again print the access token with `gcloud
-auth print-access-token`.  The token will look the same as shown above, and can be used in the same way.
+auth print-access-token`.  The token will look the same as shown above, and can
+be used in the same way. Subject to permissions associated to the service
+account, of course.
 
 
-## Getting a token using your own code.
+## Getting a token using your own code
 
-In some cases you may want to get a token without relying on gcloud, and your code may not be running in GCE.
+In some cases you may want to get a token without relying on gcloud, and your
+code may not be running in GCE.
 
 The code in this repository just shows how this is possible. It will show what
 endpoints to use, How to request the right scopes, what credentials are
-necessary, and so on. I don't have any insight into how gcloud is implemented,
-but I am certain that gcloud invokes the same endpoints these example programs
-use, to get tokens.
+necessary, and so on. I don't have any particuar insider knowledge of how gcloud
+is implemented, but I feel confident that gcloud invokes the same endpoints these
+example programs use, to get tokens.
 
 Initially the examples will use nodejs and the builtin `https` module.
 I may add more examples later, maybe other languages and so on, as time permits.
