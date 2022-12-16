@@ -16,12 +16,10 @@
 using System;
 using System.Net.Http;
 using System.IO;
-using System.Text;
 using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Security.Cryptography;
 
 namespace Google.AccessTokensExamples.ServiceAccount
