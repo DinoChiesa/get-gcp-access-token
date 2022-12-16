@@ -1,10 +1,11 @@
 # Examples: How to Get a GCP Access Token
 
-This repo contains examples that illustrate how to get a GCP access token programmatically.
+This repo contains code examples that illustrate how to get a GCP access token programmatically.
 
 ## What does a token look like?
 
-There are different ways to get a token, but regardless of the way you choose, the token always looks similar.
+There are different ways to get a token, but regardless of the way you choose,
+the token always looks similar.
 
 It will look like:
 
@@ -33,16 +34,17 @@ distinct.  For example:
 | Apigee         | apigee.googleapis.com   |
 | BigQuery       | bigquery.googleapis.com |
 | Logging        | logging.googleapis.com  |
-| and so on..... |                         |
+| many more..... |                         |
 
 
 This is just standard Google Cloud stuff. Even with Apigee hybrid, in which the
-gateways can run externally to Google cloud (let's say in AWS EKS), the control
+gateways can run externally to Google Cloud (let's say in AWS EKS), the control
 plane is in Google Cloud, and you must configure Apigee hybrid by interacting
 with the control plane endpoint at apigee.googleapis.com. In all cases, you need
 that access token to authorize the call.
 
-If you are using curl, you should pass the token as a bearer token, in the Authorization header, like so:
+If you are using curl, you should pass the token as a bearer token, in the
+Authorization header, like so:
 
 ```sh
 curl -i -H "Authorization: Bearer $TOKEN" https://SERVICE.googleapis.com/url/path
@@ -50,18 +52,18 @@ curl -i -H "Authorization: Bearer $TOKEN" https://SERVICE.googleapis.com/url/pat
 
 ## Decoding tokens
 
-There is no way to "decode" that token on your own.  It's just an opaque string
+There is no way to "decode" a GCP access token on your own. It kinda looks like it might be a JWT, because it has dot-concatenated sections. But it is not decodable; it's just an opaque string
 of characters to you. To use it, you need to send it to a googleapis.com endpoint
 that knows what to do with it.
 
 You can send the access token to the googleapis tokeninfo endpoint to ask Google
-to tell you about it.  This looks like so:
+to tell you about it.  Like so:
 
 ```
 curl -i https://www.googleapis.com/oauth2/v3/tokeninfo\?access_token=$TOKEN
 ```
 
-For a user-based access token, the response will give expiry, email, audience, scope, etc. Like so: 
+For a user-based access token, the response will give expiry, email, audience, scope, etc. Like so:
 ```
 {
   "azp": "32555940559.apps.googleusercontent.com",
@@ -76,7 +78,7 @@ For a user-based access token, the response will give expiry, email, audience, s
 }
 ```
 
-For an access token granted to a service-account, the response will be like this: 
+For an access token granted to a service-account, the response will be like this:
 
 ```
 {
@@ -91,6 +93,12 @@ For an access token granted to a service-account, the response will be like this
 The aud, sub, and azp attributes just identify the audience, subject, and
 authorized party. Those are unique IDs for the Google Cloud platform, for that
 particular principal.
+
+More often you will not be sending the access token to an endpoint that merely
+gives you information about the token.  More often you will be sending it to a
+googleapis.com endpoint to perform some task related to managing cloud
+resources. In the Apigee realm, that might be "deploy a proxy revision", but it
+can be lots of other things, related to other parts of Google Cloud.
 
 ## Three Ways to Get a Token
 
@@ -144,8 +152,10 @@ necessary, and so on. I don't have any particuar insider knowledge of how gcloud
 is implemented, but I feel confident that gcloud invokes the same endpoints these
 example programs use, to get tokens.
 
-Initially the examples will use nodejs and the builtin `https` module.
-I may add more examples later, maybe other languages and so on, as time permits.
+Currently the examples use nodejs and dotnet. They do not rely on the
+Google-provided client libraries, just to make a point that you don't actually
+need those client libraries.  I may add more examples later, maybe other
+languages and so on, as time permits.
 
 I hope the code here will be valuable in two ways:
 
@@ -156,29 +166,35 @@ I hope the code here will be valuable in two ways:
    start from this working example and buid code for other scripting
    environments or platforms. Powershell, python, and etc.
 
-There are currently two examples here:
+There are currently these examples here:
 
-* **getTokenWithUserAuth** - gets an OAuth token usable with Google APIs, based
+* **(nodejs) getTokenWithUserAuth** - gets an OAuth token usable with Google APIs, based
   on user authentication. This uses a client that must be registered with Google
   IAM.
 
-* **getTokenWithServiceAccount** - gets an OAuth token usable with Google APIs,
+* **(nodejs) getTokenWithServiceAccount** - gets an OAuth token usable with Google APIs,
   based on service account authentication. This requires a service account .json
   file, containing the private key of the service account.
 
-Both of these examples require a recent version of
-[node](https://nodejs.org/en/) (which should include npm).
+* **(dotnet) GetAccessTokenForServiceAccount** - gets an OAuth token usable with Google APIs,
+  based on service account authentication. This requires a service account .json
+  file, containing the private key of the service account.
 
-The two methods for acquiring tokens are intended for different purposes, and
-you should take care to decide which one to use, carefully. If you are in doubt
-review your use case with your security architect. In a typical case, a CI/CD
-pipeline might use a service account. But if you're just automating Google
-things (including apigee.googleapis.com) for your own purposes, for example via
-a script you run from your own terminal, you probably want to use the human
-authentication to get the token. Regardless which case you use, the result is an
-OAuth token, which looks and works the same after you acquire it.
+All of these examples require a recent version of the underlying framework, whether
+[node](https://nodejs.org/en/) or [dotnet](https://dotnet.microsoft.com/en-us/download).
 
-## getTokenWithUserAuth
+The two methods for acquiring tokens - via user authentication or using a
+service account identity - are intended for different purposes, and you should
+take care to decide which one to use, carefully. If you are in doubt review your
+use case with your security architect. In a typical case, a CI/CD pipeline might
+use a service account. But if you're just automating Google things (including
+apigee.googleapis.com) for your own purposes, for example via a script you run
+from your own terminal, you probably want to use the human authentication to get
+the token. It's important because the audit trail will identify YOU as the
+person doing the work.  Regardless which case you use, the result is an OAuth
+token, which looks and works the same after you acquire it.
+
+## (nodejs) getTokenWithUserAuth
 
 This shows case 1 from above - getting a token for an authenticated user.
 
@@ -224,7 +240,7 @@ That is all one-time work.  Now, to get a token , you can do the following as ma
 
 1. invoke the script, specifying the credentials file you downloaded:
    ```
-   cd getTokenWithUserAuth
+   cd node/getTokenWithUserAuth
    npm install
    node ./getTokenWithUserAuth.js -v  \
        --client_credentials ./downloaded-client-config-file.json
@@ -256,7 +272,7 @@ That is all one-time work.  Now, to get a token , you can do the following as ma
    user has.
 
 
-## getTokenWithServiceAccount
+## (nodejs) getTokenWithServiceAccount
 
 This shows case 2 from above - getting a token for a service account.
 
@@ -307,7 +323,7 @@ That is all one-time setup stuff. Now, as often as you need to create a token, r
 
 1. invoke the node script specifying the downloaded key file
    ```
-   cd getTokenWithServiceAccount
+   cd node/getTokenWithServiceAccount
    npm install
    node ./getTokenWithServiceAccount.js -v  --keyfile ~/Downloads/my-service-account-key.json
    ```
@@ -325,6 +341,70 @@ That is all one-time setup stuff. Now, as often as you need to create a token, r
    You can then use that token as a Bearer token in API calls to
    `*.googleapis.com` , subject to the roles and permissions the service account
    has.
+
+
+## (dotnet) GetAccessTokenForServiceAccount
+
+The pre-req here is the dotnet SDK.  Install that on your machine. On MacOS, I
+did this via homebrew:
+
+```
+brew install --cask dotnet-sdk
+```
+
+Then, do the same setup as is described for the nodejs example for service
+accounts above. You need the service account key json file. If you've already
+done it for the nodejs example, you do not need to repeat that setup to use the
+dotnet app.
+
+Then, build and run the app:
+
+1. verify your dotnet version
+   ```
+   cd dotnetcore/GetAccessTokenForServiceAccount
+   dotnet --version
+   ```
+
+   I built and tested this with version `7.0.101`.
+
+2. install pre-requisites
+   ```
+   dotnet add package Microsoft.IdentityModel.JsonWebTokens
+   dotnet add package System.Security.Cryptography.Algorithms
+   ```
+
+2. build
+   ```
+   dotnet build
+   ```
+
+   This should show you some happy messages.
+
+3. run
+   ```
+   bin/Debug/netcoreapp3.1/Get-GCP-Token  --sakeyfile ~/Downloads/my-downloaded-key-file.json
+   ```
+
+   The result should be a token:
+   ```
+   ya29.c.b0AXv0zTPIXDh-FGN_hM4e..many-characters..jN8H3fp50U
+   ```
+
+   You can then use that token as a Bearer token in API calls to
+   `*.googleapis.com` , subject to the roles and permissions the service account
+   has.
+
+   If you get a message like
+   ```
+   You must install or update .NET to run this application.
+   ```
+   ..then you may be able to avoid that by invoking the command with the `--roll-forward` option:
+
+   ```
+   bin/Debug/netcoreapp3.1/Get-GCP-Token \
+     --roll-forward \
+     --sakeyfile ~/Downloads/my-downloaded-key-file.json
+   ```
 
 
 
