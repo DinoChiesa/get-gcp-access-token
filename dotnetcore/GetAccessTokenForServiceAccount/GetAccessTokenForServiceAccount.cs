@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Security.Cryptography;
 
-
 namespace Google.AccessTokensExamples.ServiceAccount
 {
   class GetToken
@@ -136,27 +135,23 @@ namespace Google.AccessTokensExamples.ServiceAccount
       }
     }
 
-
     void Run()
     {
       var sakeyjson = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(_saCredsFilename));
-
       var token = GenerateToken(sakeyjson);
-
       var tokenHandler = new JwtSecurityTokenHandler();
       var tokenString = tokenHandler.WriteToken(token);
       if (_verbose)
       {
-      Console.WriteLine("\ntoken:\n" + tokenString);
-
-      var decodedToken = tokenHandler.ReadToken(tokenString);
-      Console.WriteLine("\nDecoded: \n"+ decodedToken);
+        Console.WriteLine("\ntoken:\n" + tokenString);
+        var decodedToken = tokenHandler.ReadToken(tokenString);
+        Console.WriteLine("\nDecoded: \n"+ decodedToken);
       }
+
       var response = RequestAccessToken(tokenString, sakeyjson["token_uri"]);
       if (_verbose)
       {
-      Console.WriteLine("\nResponse: \n"+ response);
-
+        Console.WriteLine("\nResponse: \n"+ response);
       }
 
       // use Dictionary<string,Object> here because the expires_in is a number.
@@ -164,13 +159,11 @@ namespace Google.AccessTokensExamples.ServiceAccount
       var accessToken = responseJson["access_token"].ToString().TrimEnd('.');
       if (_verbose)
       {
-      Console.WriteLine("\naccess_token: \n"+ accessToken);
-
+        Console.WriteLine("\naccess_token: \n"+ accessToken);
       }
       else
       {
-      Console.WriteLine(accessToken);
-
+        Console.WriteLine(accessToken);
       }
     }
   }
