@@ -305,10 +305,11 @@ Now, to get a token , you can do the following as many times as you like:
 
 
 **The "exchange the code for a token" is normally a thing that a user must
-participate in.  The user needs to view the code on the browser tab, then paste
-the code into the console app prompt, and then the exchange happens. But this
-script tries to automate that by starting a local http server that retrieves the code
-automatically and eliminates the need for that copy/paste experience. 
+participate in.  The user needs to view the code on the browser tab, then
+copy/paste the code into the console app prompt, and then the exchange
+happens. But this script tries to automate that by starting a local http server
+that retrieves the code automatically and eliminates the need for that manual
+copy/paste experience.
 
 
 ## (nodejs) getTokenWithServiceAccount
@@ -356,7 +357,7 @@ Follow these steps for the one-time setup:
    }
    ```
 
-That thing is a secret. Protect it as such. 
+That thing is a secret. Protect it as such.
 
 That is all one-time setup stuff. Now, as often as you need to create a token, run these steps:
 
