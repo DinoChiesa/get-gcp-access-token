@@ -94,11 +94,34 @@ The aud, sub, and azp attributes just identify the audience, subject, and
 authorized party. Those are unique IDs for the Google Cloud platform, for that
 particular principal.
 
-More often you will not be sending the access token to an endpoint that merely
-gives you information about the token.  More often you will be sending it to a
-googleapis.com endpoint to perform some task related to managing cloud
-resources. In the Apigee realm, that might be "deploy a proxy revision", but it
-can be lots of other things, related to other parts of Google Cloud.
+## Using a token
+
+Needless to say, sending the access token to an endpoint that merely gives you
+information about the token, is not the most interesting thing you can do with a
+token.  More often you will be sending it to a googleapis.com endpoint to
+perform some task related to managing cloud resources. In the Apigee realm, that
+might be "deploy a proxy revision" or "create a new developer app" etc, but it
+can be lots of other things, related to any other parts of Google Cloud.  List
+cloud storage buckets, manage or access secrets, send payloads to vertex AI,
+send a query to BigQuery, etc.
+
+That assumes the principal (user or service account) has the appropriate
+permissions for the requested action. The token is just an
+[opaque](https://jpassing.com/2023/01/24/all-google-access-tokens-are-not-created-equal/)
+string that allows Google Cloud to know the principal who requested it. Whether
+that principal will be allowed (or authorized) depends on the IAM permissions
+(and maybe rules!) that get applied on the Google Cloud side.
+
+One principal may be granted read-only access to Google Cloud storage assets,
+while another might have read/write
+[permissions](https://cloud.google.com/storage/docs/access-control/iam-permissions).
+There are loads of fine-grained permissions; these are typically grouped into
+"roles" which then get applied to principals.  So userA might have role
+["Storage Object
+Creator"](https://cloud.google.com/storage/docs/access-control/iam-roles), which
+grants permissions like { `storage.objects.create`,
+`storage.managedFolders.create`, `storage.multipartUploads.create`... }.
+
 
 ## Three Ways to Get a Token
 
@@ -106,7 +129,7 @@ There are three ways to get an access token for services within GCP:
 
 1. via interactive user login
 2. via a service-account key and a special OAuthV2 grant
-3. via a "shortcut", using the metadata endpoint for Google Compute Engine.
+3. via a REST "shortcut", using the metadata endpoint for Google Compute Engine.
 
 ## The Metadata endpoint
 
@@ -117,10 +140,12 @@ curl "http://metadata.google.internal/computeMetadata/v1/instance/service-accoun
 ```
 
 But the catch is, this works if and only if the command is run from a Google
-Compute Engine instance. It gets a token for the service account which is used
-by the GCE instance.  You do not need to create or download a service account
-key file for this to work.  This call won't work if you try invoking that
-endpoint from your laptop, or a build server that runs outside of GCP.
+Compute Engine (GCE) instance. It can be from a raw VM, or a Cloud Run app, or a
+Cloud Shell instance... or an Apigee API!  This request gets a token for the
+service account which is used by the GCE instance. You do not need to create or
+download or reference a service account _key file_ for this to work. This call
+won't work if you try invoking that endpoint from your laptop, or a build server
+that runs outside of GCP.
 
 
 ## The other ways, via gcloud
@@ -206,11 +231,13 @@ To get a client credential, follow these one-time steps:
 
 2. select your desired "project".  Service accounts are maintained within the scope of a GCP project.
 
-3. Using the left-hand-side, Navigate to "APIs & Services".
+3. Using the hamburger navigation icon in the upper left-hand-side of the screen, Navigate to "APIs & Services".
 
 4. Again using the LHS nav, Click "Credentials" (You may need to configure the OAuth Consent Screen to allow this all to happen)
 
-5. at the top of the page, click "+ CREATE CREDENTIAL"
+5. at the top of the page, click "+ CREATE CREDENTIALS"
+
+5. you may have to configure the "Consent Screen" at this point if you have not done so already.
 
 6. click "OAuth client ID"
 
@@ -235,8 +262,13 @@ To get a client credential, follow these one-time steps:
    }
    ```
 
+That is all one-time work. (For the curious, all of this has been "done for you"
+if you are using the gcloud command line tool. When you use `gcloud auth
+print-access-token`, it is using it's own app, it's own `client_id` and
+`client_secret` etc., that has been previously provisioned.)
 
-That is all one-time work.  Now, to get a token , you can do the following as many times as you like:
+
+Now, to get a token , you can do the following as many times as you like:
 
 1. invoke the script, specifying the credentials file you downloaded:
    ```
@@ -256,7 +288,7 @@ That is all one-time work.  Now, to get a token , you can do the following as ma
    generate and return a single-use authorization code to the script. The web
    page will show a page reading: "OK. You can now close this browser tab."
 
-   The script will exchange the code for a token.  The response looks like this:
+   The script will exchange the code for a token**.  The response looks like this:
 
    ```json
    {
@@ -272,6 +304,13 @@ That is all one-time work.  Now, to get a token , you can do the following as ma
    user has.
 
 
+**The "exchange the code for a token" is normally a thing that a user must
+participate in.  The user needs to view the code on the browser tab, then paste
+the code into the console app prompt, and then the exchange happens. But this
+script tries to automate that by starting a local http server that retrieves the code
+automatically and eliminates the need for that copy/paste experience. 
+
+
 ## (nodejs) getTokenWithServiceAccount
 
 This shows case 2 from above - getting a token for a service account.
@@ -284,7 +323,6 @@ Follow these steps for the one-time setup:
 1. visit console.cloud.google.com
 
 2. select your desired "project".  Service accounts are maintained within the scope of a GCP project.
-
 
 3. Using the left-hand-side, Navigate to "IAM & Admin".
 
@@ -318,6 +356,7 @@ Follow these steps for the one-time setup:
    }
    ```
 
+That thing is a secret. Protect it as such. 
 
 That is all one-time setup stuff. Now, as often as you need to create a token, run these steps:
 
@@ -418,7 +457,7 @@ official Google product.
 
 ## License
 
-This material is [Copyright 2021-2022 Google LLC](./NOTICE).
+This material is [Copyright 2021-2023 Google LLC](./NOTICE).
 and is licensed under the [Apache 2.0 License](LICENSE).
 
 

@@ -1,0 +1,17 @@
+
+**/Icon*
+**/Icon
+*/Icon
+Icon
+
+**/#*.*#
+**/*.*~
+**/#*#
+**/*~
+
+**/.notused/
+**/node_modules/
+
+**/*.class
+
+**/client_secret_*.googleusercontent.com.json

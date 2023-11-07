@@ -1,7 +1,7 @@
 {
   "name": "gettokenwithserviceaccount",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.0.1",
+  "description": "get a GCP Access Token, using a JSON-encoded Service Account key",
   "main": "getTokenWithServiceAccount.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,6 +9,8 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "querystring": "^0.2.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
