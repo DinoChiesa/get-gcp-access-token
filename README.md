@@ -218,12 +218,12 @@ There are currently these examples here:
   IAM.
 
 * **(nodejs) getTokenWithServiceAccount** - gets an OAuth token usable with Google APIs,
-  based on service account authentication. This requires a service account .json
-  file, containing the private key of the service account.
+  based on service account authentication. This requires a service account key
+  file in JSON format, containing the private key of the service account. Note that [Google recommends against](https://cloud.google.com/docs/authentication#auth-decision-tree) creating and downloading service account keys, if you can avoid it. 
 
 * **(dotnet) GetAccessTokenForServiceAccount** - gets an OAuth token usable with Google APIs,
   based on service account authentication. This requires a service account .json
-  file, containing the private key of the service account.
+  file, containing the private key of the service account. ([note](https://cloud.google.com/docs/authentication#auth-decision-tree))
 
 All of these examples require a recent version of the underlying framework, whether
 [node](https://nodejs.org/en/) or [dotnet](https://dotnet.microsoft.com/en-us/download).
@@ -231,7 +231,9 @@ All of these examples require a recent version of the underlying framework, whet
 The two methods for acquiring tokens - via user authentication or using a
 service account identity - are intended for different purposes, and you should
 take care to decide which one to use, carefully. If you are in doubt review your
-use case with your security architect. In a typical case, a CI/CD pipeline might
+use case with your security architect, and consult [the decision tree](https://cloud.google.com/docs/authentication#auth-decision-tree).
+
+In a typical case, a CI/CD pipeline might
 use a service account. But if you're just automating Google things (including
 apigee.googleapis.com) for your own purposes, for example via a script you run
 from your own terminal, you probably want to use the human authentication to get
