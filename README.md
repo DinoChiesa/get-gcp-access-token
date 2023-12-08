@@ -2,10 +2,22 @@
 
 This repo contains code examples that illustrate how to get a GCP access token programmatically.
 
-## What does a token look like?
+Across all Google Cloud services, the programmatic interface to the control
+plane - the API - is very similar and consistent. By "service" I refer to things like
+Cloud service, Apigee, BigQuery, Cloud Storage, Cloud Logging, Cloud Run...
+
+There's great deal of consistency in the API, in the shape of the request and response payloads,
+the use of return status, the URL patterns, the api endpoint (always
+_something_.googleapis.com), and of course the authentication. For this last part,
+all of them require an OAuth token. And there are different options for how you
+obtain that token.
+
+This repo covers some of that. First, some background.
+
+## What does an access token look like?
 
 There are different ways to get a token, but regardless of the way you choose,
-the token always looks similar.
+the access token always looks similar.
 
 It will look like:
 
@@ -14,11 +26,15 @@ ya29.a0AeTM1i..many..many..characters...CCePCQ0174
 ```
 
 As far as I know, Google hasn't documented that officially as the structure of
-the token. It is _opaque_. In fact, the most you can rely on is that the token
-will be a string of characters. The above example, a string of characters that
-begins with `ya29.`, has been the basic structure, for a long while now. But
-there's no guarantee that will continue.
+the access token. It is _opaque_. It is not a JWT. In fact, the most you can
+rely on is that the token will be a string of characters. The above example, a
+string of characters that begins with `ya29.`, has been the basic structure, for
+a long while now. But asfar as I know, that's not documented, and there's no
+guarantee that will continue.
 
+
+This is distinct from an ID token, which can also be issued by Google Cloud 
+token endpoints. The ID Token is a JWT.
 
 ## What are tokens good for?
 
@@ -52,12 +68,13 @@ curl -i -H "Authorization: Bearer $TOKEN" https://SERVICE.googleapis.com/url/pat
 
 ## Decoding tokens
 
-There is no way to "decode" a GCP access token on your own. It kinda looks like it might be a JWT, because it has dot-concatenated sections. But it is not decodable; it's just an opaque string
-of characters to you. To use it, you need to send it to a googleapis.com endpoint
-that knows what to do with it.
+There is no way to "decode" a GCP access token on your own. It kinda looks like
+it might be a JWT, because it has dot-concatenated sections. But it is not
+decodable by you; it's just an opaque string of characters to you. To use it, you need
+to send it to a googleapis.com endpoint that knows what to do with it.
 
 You can send the access token to the googleapis tokeninfo endpoint to ask Google
-to tell you about it.  Like so:
+to tell you about it. Like so:
 
 ```
 curl -i https://www.googleapis.com/oauth2/v3/tokeninfo\?access_token=$TOKEN
@@ -90,11 +107,14 @@ For an access token granted to a service-account, the response will be like this
 }
 ```
 
-The aud, sub, and azp attributes just identify the audience, subject, and
-authorized party. Those are unique IDs for the Google Cloud platform, for that
-particular principal.
+Those response payloads ALSO look kinda JWT-ish, but do not let this mislead
+you. To repeat, the token is not a JWT.
 
-## Using a token
+As with JWT, the aud, sub, and azp attributes just identify the
+audience, subject, and authorized party. Those are unique IDs for the Google
+Cloud platform, for that particular principal.
+
+## Using an access token
 
 Needless to say, sending the access token to an endpoint that merely gives you
 information about the token, is not the most interesting thing you can do with a
