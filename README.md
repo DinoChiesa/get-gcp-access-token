@@ -8,11 +8,11 @@ Cloud service, Apigee, BigQuery, Cloud Storage, Cloud Logging, Cloud Run...
 
 There's great deal of consistency in the API, in the shape of the request and response payloads,
 the use of return status, the URL patterns, the api endpoint (always
-_something_.googleapis.com), and of course the authentication. For this last part,
-all of them require an OAuth token. And there are different options for how you
-obtain that token.
+_something_.googleapis.com), and of course the authentication.
 
-This repo covers some of that. First, some background.
+For authentication, all of the _Google Cloud services_ require an OAuth2 access
+token. And there are different options for how you obtain that token. This repo
+covers some of that. First, some background.
 
 ## What does an access token look like?
 
@@ -32,8 +32,7 @@ string of characters that begins with `ya29.`, has been the basic structure, for
 a long while now. But asfar as I know, that's not documented, and there's no
 guarantee that will continue.
 
-
-This is distinct from an ID token, which can also be issued by Google Cloud 
+This is distinct from an ID token, which can also be issued by Google Cloud
 token endpoints. The ID Token is a JWT.
 
 ## What are tokens good for?
@@ -57,7 +56,7 @@ This is just standard Google Cloud stuff. Even with Apigee hybrid, in which the
 gateways can run externally to Google Cloud (let's say in AWS EKS), the control
 plane is in Google Cloud, and you must configure Apigee hybrid by interacting
 with the control plane endpoint at apigee.googleapis.com. In all cases, you need
-that access token to authorize the call.
+that access token to authenticate the call.
 
 If you are using curl, you should pass the token as a bearer token, in the
 Authorization header, like so:
@@ -70,7 +69,7 @@ curl -i -H "Authorization: Bearer $TOKEN" https://SERVICE.googleapis.com/url/pat
 
 There is no way to "decode" a GCP access token on your own. It kinda looks like
 it might be a JWT, because it has dot-concatenated sections. But it is not
-decodable by you; it's just an opaque string of characters to you. To use it, you need
+decodable by you; it's just an opaque string of characters. To use it, you need
 to send it to a googleapis.com endpoint that knows what to do with it.
 
 You can send the access token to the googleapis tokeninfo endpoint to ask Google
@@ -114,16 +113,83 @@ As with JWT, the aud, sub, and azp attributes just identify the
 audience, subject, and authorized party. Those are unique IDs for the Google
 Cloud platform, for that particular principal.
 
+## Access Tokens vs ID Tokens
+
+For any principal, it is also possible to get a different kind of token - an ID
+Token, also known as an identity token.  You can get an ID token for a user, or
+for a service account.
+
+Google APIs (*.googleapis.com) accept _access tokens_ when authorizing
+administrative requests. But other systems might accept [_ID
+tokens_](https://cloud.google.com/docs/authentication/get-id-token) as the
+required credential.
+
+Some examples here are the http-accessible endpoints for Cloud Run services, or Cloud
+Functions that can be triggered via HTTP requests. If you configure your Cloud
+Run service or your Cloud Function to NOT allow unauthenticated access (this is
+the default when using the gcloud cli to deploy these things), then a caller
+will need to provide an ID token, passed as a bearer token in the Authorization
+header. And the principal identified by that token must have the appropriate
+permissions on the service or function. In the case of Cloud Run, it's
+`roles/run.invoker`; in the case of Cloud Functions, it's
+`roles/cloudfunctions.invoker`.
+
+In general the pattern is:
+
+- If it's a builtin Google Cloud service, like PubSub, or FhirStore, or Cloud
+  Logging, etc etc etc, basically any endpoint hosted at *.googleapis.com ,
+  then you need to use an Access Token.
+
+- If it's code that you've written and published, like with Cloud Run Services
+  and Cloud Functions, then if you've enabled "Authorization", you should use an
+  ID Token. (And possibly IAP)
+
+So if you want your app to read or write to a Cloud Log, then you need an access token
+for that. If you want to inquire or update the deployment status of an API
+proxy, then you're invoking apigee.googleapis.com, which is a google service,
+which means you need to use an Access Token.
+
+And here's a subtlety - to CREATE a Run service or job, you will invoke
+run.googleapis.com, which means you need an access token.  It's an
+administrative function, and you're invoking a google-hosted API
+(run.googleapis.com), therefore... access token.  If you are EXECUTING a Cloud
+Run JOB, then... again you make that request administratively, by invoking
+run.googleapis.com .  So, you know what that means; It's a google-hosted API and
+that means use an Access Token.
+
+Conversely if you are sending a REST request into a cloud run SERVICE, then it's
+an ID token. You're not invoking run.googleapis.com; instead you're invoking
+some-custom-domain.run.app , an endpoint at which your code is listening, hence
+ID token.
+
+For code that you write and then host in GKE, how you set up the security
+requirements is up to you.  I suppose your code could require either an ID token
+or an Access Token.  Or even something different, like HMAc-signed request
+payloads, etc.
+
+To get an ID token identifying YOU, with the gcloud command line tool, run this:
+```
+   gcloud auth print-identity-token
+```
+
+An ID Token _is_ a JWT, so you can decode it, verify the signature on it,
+examine the claims in it, and so on.
+
+OK that is all I have to say about ID Tokens. The rest of this document will
+talk about access tokens.
+
+
 ## Using an access token
 
-Needless to say, sending the access token to an endpoint that merely gives you
-information about the token, is not the most interesting thing you can do with a
-token.  More often you will be sending it to a googleapis.com endpoint to
-perform some task related to managing cloud resources. In the Apigee realm, that
-might be "deploy a proxy revision" or "create a new developer app" etc, but it
-can be lots of other things, related to any other parts of Google Cloud.  List
-cloud storage buckets, manage or access secrets, send payloads to vertex AI,
-send a query to BigQuery, etc.
+Earlier I described how to use the `/tokeninfo` endpoint to get information
+about a token.  Needless to say, sending the access token to an endpoint that
+merely gives you information about the token, is not the most interesting thing
+you can do with a token.  More often you will be sending it to a googleapis.com
+endpoint to perform some task related to managing cloud resources. In the Apigee
+realm, that might be "deploy a proxy revision" or "create a new developer app"
+etc, but it can be lots of other things, related to any other parts of Google
+Cloud.  List cloud storage buckets, manage or access secrets, send payloads to
+vertex AI, send a query to BigQuery, etc.
 
 That assumes the principal (user or service account) has the appropriate
 permissions for the requested action. The token is just an
@@ -140,7 +206,8 @@ There are loads of fine-grained permissions; these are typically grouped into
 ["Storage Object
 Creator"](https://cloud.google.com/storage/docs/access-control/iam-roles), which
 grants permissions like { `storage.objects.create`,
-`storage.managedFolders.create`, `storage.multipartUploads.create`... }.
+`storage.managedFolders.create`, `storage.multipartUploads.create`... }. userB
+might have a different set of roles, and different permissions.
 
 
 ## Three Ways to Get a Token
@@ -151,10 +218,13 @@ There are three ways to get an access token for services within GCP:
 2. via a service-account key and a special OAuthV2 grant
 3. via a REST "shortcut", using the metadata endpoint for Google Compute Engine.
 
+There are various libraries and frameworks , but basically they all are wrappers on the token dispensing APIs. 
+
 ## The Metadata endpoint
 
 The last way is the simplest: send a GET request to an endpoint and get a token back. Like this:
-```
+
+```sh
 curl "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" \
 -H "Metadata-Flavor: Google"
 ```
@@ -172,16 +242,37 @@ that runs outside of GCP.
 
 The easiest way to get a GCP access token _for yourself_ is via the [gcloud
 command-line tool](https://cloud.google.com/sdk/gcloud).  Install the tool, then
-invoke `gcloud auth login` followed by `gcloud auth print-access-token`.  You
-will see the access token, which you can then use in curl commands, or in
+invoke:
+```sh
+gcloud auth login
+```
+
+...which starts an interactive user login, for the 3-legged OAuth2 grant. 
+
+After that completes, run this:
+```sh
+gcloud auth print-access-token
+```
+
+You will see the access token, which you can then use in curl commands, or in
 postman, to tickle the various endpoints under googleapis.com .
 
 
 You can also use gcloud to get a token on behalf of a service account, using a
-downloaded service-account key file.  Rather than `gcloud auth login`, use
-`gcloud auth activate-service-account SERVICE_ACCOUNT@DOMAIN.COM
---key-file=/path/key.json` and then again print the access token with `gcloud
-auth print-access-token`.  The token will look the same as shown above, and can
+downloaded service-account key file.  Rather than `gcloud auth login`, use this:
+
+```sh
+gcloud auth activate-service-account SERVICE_ACCOUNT@DOMAIN.COM --key-file=/path/key.json
+```
+
+This basically wraps the 2nd method I mentioned above. 
+
+Then, print the access token with:
+```sh
+gcloud auth print-access-token
+```
+
+The token will look the same as shown above, and can
 be used in the same way. Subject to permissions associated to the service
 account, of course.
 
@@ -199,7 +290,8 @@ example programs use, to get tokens.
 
 Currently the examples use nodejs and dotnet. They do not rely on the
 Google-provided client libraries, just to make a point that you don't actually
-need those client libraries.  I may add more examples later, maybe other
+need those client libraries.  You can invoke the token-dispensing endpoint
+provided by Google Cloud, directly. I may add more examples later, maybe other
 languages and so on, as time permits.
 
 I hope the code here will be valuable in two ways:
@@ -219,7 +311,7 @@ There are currently these examples here:
 
 * **(nodejs) getTokenWithServiceAccount** - gets an OAuth token usable with Google APIs,
   based on service account authentication. This requires a service account key
-  file in JSON format, containing the private key of the service account. Note that [Google recommends against](https://cloud.google.com/docs/authentication#auth-decision-tree) creating and downloading service account keys, if you can avoid it. 
+  file in JSON format, containing the private key of the service account. Note that [Google recommends against](https://cloud.google.com/docs/authentication#auth-decision-tree) creating and downloading service account keys, if you can avoid it.
 
 * **(dotnet) GetAccessTokenForServiceAccount** - gets an OAuth token usable with Google APIs,
   based on service account authentication. This requires a service account .json
@@ -231,7 +323,8 @@ All of these examples require a recent version of the underlying framework, whet
 The two methods for acquiring tokens - via user authentication or using a
 service account identity - are intended for different purposes, and you should
 take care to decide which one to use, carefully. If you are in doubt review your
-use case with your security architect, and consult [the decision tree](https://cloud.google.com/docs/authentication#auth-decision-tree).
+use case with your security architect, and consult [the decision
+tree](https://cloud.google.com/docs/authentication#auth-decision-tree).
 
 In a typical case, a CI/CD pipeline might
 use a service account. But if you're just automating Google things (including
