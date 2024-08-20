@@ -218,7 +218,7 @@ There are three ways to get an access token for services within GCP:
 2. via a service-account key and a special OAuthV2 grant
 3. via a REST "shortcut", using the metadata endpoint for Google Compute Engine.
 
-There are various libraries and frameworks , but basically they all are wrappers on the token dispensing APIs. 
+There are various libraries and frameworks , but basically they all are wrappers on the token dispensing APIs.
 
 ## The Metadata endpoint
 
@@ -247,7 +247,7 @@ invoke:
 gcloud auth login
 ```
 
-...which starts an interactive user login, for the 3-legged OAuth2 grant. 
+...which starts an interactive user login, for the 3-legged OAuth2 grant.
 
 After that completes, run this:
 ```sh
@@ -265,7 +265,7 @@ downloaded service-account key file.  Rather than `gcloud auth login`, use this:
 gcloud auth activate-service-account SERVICE_ACCOUNT@DOMAIN.COM --key-file=/path/key.json
 ```
 
-This basically wraps the 2nd method I mentioned above. 
+This basically wraps the 2nd method I mentioned above.
 
 Then, print the access token with:
 ```sh
@@ -305,33 +305,38 @@ I hope the code here will be valuable in two ways:
 
 There are currently these examples here:
 
-* **(nodejs) getTokenWithUserAuth** - gets an OAuth token usable with Google APIs, based
-  on user authentication. This uses a client that must be registered with Google
-  IAM.
+* **(bash) get-access-token-for-service-account.sh** - a bash script that gets
+  an access token using a service account key (*see note below).
 
-* **(nodejs) getTokenWithServiceAccount** - gets an OAuth token usable with Google APIs,
-  based on service account authentication. This requires a service account key
-  file in JSON format, containing the private key of the service account. Note that [Google recommends against](https://cloud.google.com/docs/authentication#auth-decision-tree) creating and downloading service account keys, if you can avoid it.
+* **(nodejs) getTokenWithUserAuth** - a [nodejs](https://nodejs.org/en/) script
+  that gets an access token usable with Google APIs, using user
+  authentication. This relies on a client that must be registered with Google IAM.
 
-* **(dotnet) GetAccessTokenForServiceAccount** - gets an OAuth token usable with Google APIs,
-  based on service account authentication. This requires a service account .json
-  file, containing the private key of the service account. ([note](https://cloud.google.com/docs/authentication#auth-decision-tree))
+* **(nodejs) getTokenWithServiceAccount** - a [nodejs](https://nodejs.org/en/)
+  script that gets an access token usable with Google APIs, using a service
+  account key. (*see note below).
 
-All of these examples require a recent version of the underlying framework, whether
-[node](https://nodejs.org/en/) or [dotnet](https://dotnet.microsoft.com/en-us/download).
+* **(dotnet) GetAccessTokenForServiceAccount** - a
+  [dotnet](https://dotnet.microsoft.com/en-us/download) program that gets an
+  access token usable with Google APIs, using a service account key. (*see note
+  below).
+
 
 The two methods for acquiring tokens - via user authentication or using a
 service account identity - are intended for different purposes, and you should
-take care to decide which one to use, carefully. If you are in doubt review your
-use case with your security architect, and consult [the decision
+take care to decide which one to use. If you are in doubt review your
+use case with your security architect, or consult [the decision
 tree](https://cloud.google.com/docs/authentication#auth-decision-tree).
+
+> * Note: using any of the service account samples requires a service account key
+  file in JSON format, containing the private key of the service account. Be aware that [Google recommends against](https://cloud.google.com/docs/authentication#auth-decision-tree) creating and downloading service account keys, if you can avoid it.
 
 In a typical case, a CI/CD pipeline might
 use a service account. But if you're just automating Google things (including
 apigee.googleapis.com) for your own purposes, for example via a script you run
 from your own terminal, you probably want to use the human authentication to get
 the token. It's important because the audit trail will identify YOU as the
-person doing the work.  Regardless which case you use, the result is an OAuth
+person doing the work.  Regardless which case you use, the result is an access
 token, which looks and works the same after you acquire it.
 
 ## (nodejs) getTokenWithUserAuth
@@ -427,9 +432,19 @@ that retrieves the code automatically and eliminates the need for that manual
 copy/paste experience.
 
 
-## (nodejs) getTokenWithServiceAccount
+## (bash) get-access-token-for-service-account.sh
 
-This shows case 2 from above - getting a token for a service account.
+This shows case 2 from above - getting a token for a service account, in this
+case, from a bash script.
+
+The pre-requisities here are: 
+* curl
+* base64
+* date, sed, tr
+* openssl
+
+
+xxx
 
 To set up, you need a service account JSON file containing the private key of
 the service account.
@@ -474,10 +489,31 @@ Follow these steps for the one-time setup:
 
 That thing is a secret. Protect it as such.
 
-That is all one-time setup stuff. Now, as often as you need to create a token, run these steps:
+That is all one-time setup stuff.
+
+Now, when you need a new access token, run the script:
+
+```sh
+cd sh
+./get-access-token-for-service-account.sh ~/Downloads/my-service-account-key.json
+```
+
+
+
+## (nodejs) getTokenWithServiceAccount
+
+This shows case 2 from above - getting a token for a service account, in this
+case, from a nodejs script.
+
+You need a service account key json file. To get it, follow the steps to
+generate and download a json key file, as described for the bash example for
+service accounts above. If you've already done it for the bash example, you do
+not need to repeat that setup for this example.
+
+Now, as often as you need to create a token, run these steps:
 
 1. invoke the node script specifying the downloaded key file
-   ```
+   ```sh
    cd node/getTokenWithServiceAccount
    npm install
    node ./getTokenWithServiceAccount.js -v  --keyfile ~/Downloads/my-service-account-key.json
@@ -509,10 +545,10 @@ brew install --cask dotnet-sdk
 
 On Windows, I just downloaded the .NETSDK v7.0 and installed it.
 
-Then, do the same setup as is described for the nodejs example for service
-accounts above. You need to generate a service account key json file. If you've
-already done it for the nodejs example, you do not need to repeat that setup to
-use the dotnet app.
+You need a service account key json file. To get it, follow the steps to
+generate and download a json key file, as described for the bash example for
+service accounts above. If you've already done it for the bash example, you do
+not need to repeat that setup for this example.
 
 Then, build and run the app. Follow these steps. I tested this on MacOS and Windows.
 
@@ -573,13 +609,13 @@ official Google product.
 
 ## License
 
-This material is [Copyright 2021-2023 Google LLC](./NOTICE).
+This material is [Copyright 2021-2024 Google LLC](./NOTICE).
 and is licensed under the [Apache 2.0 License](LICENSE).
 
 
 ## Support
 
-This example is open-source software.
+The examples here are open-source software.
 If you need assistance, you can try inquiring on [Google Cloud Community
 forum dedicated to Apigee](https://www.googlecloudcommunity.com/gc/Apigee/bd-p/cloud-apigee).
 There is no service-level guarantee for
