@@ -1,0 +1,19 @@
+{
+  "name": "get-token-via-google-auth-library",
+  "version": "1.0.1",
+  "description": "get a GCP Access Token, using a JSON-encoded Service Account key",
+  "type": "module",
+  "main": "getToken.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "commander": "^12.0.0",
+    "google-auth-library": "^9.6.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -305,18 +305,22 @@ I hope the code here will be valuable in two ways:
 
 There are currently these examples here:
 
-* **(bash) get-access-token-for-service-account.sh** - a bash script that gets
+* [**get-access-token-for-service-account.sh**](./sh/get-access-token-for-service-account.sh) - a bash script that gets
   an access token using a service account key (*see note below).
 
-* **(nodejs) getTokenWithUserAuth** - a [nodejs](https://nodejs.org/en/) script
+* [**getTokenWithUserAuth.js**](./node/getTokenWithUserAuth/getTokenWithUserAuth.js)- a [nodejs](https://nodejs.org/en/) script
   that gets an access token usable with Google APIs, using user
   authentication. This relies on a client that must be registered with Google IAM.
 
-* **(nodejs) getTokenWithServiceAccount** - a [nodejs](https://nodejs.org/en/)
+* [**getTokenWithServiceAccount.js**](./node/getTokenWithServiceAccount/getTokenWithServiceAccount.js) - a [nodejs](https://nodejs.org/en/)
   script that gets an access token usable with Google APIs, using a service
   account key. (*see note below).
 
-* **(dotnet) GetAccessTokenForServiceAccount** - a
+* [**getToken.js**](./node/google-auth-library/getToken.js) - a [nodejs](https://nodejs.org/en/)
+  script that gets an access token usable with Google APIs, using a service
+  account key. (*see note below).
+
+* [**GetAccessTokenForServiceAccount**](./dotnet/GetAccessTokenForServiceAccount) - a
   [dotnet](https://dotnet.microsoft.com/en-us/download) program that gets an
   access token usable with Google APIs, using a service account key. (*see note
   below).
