@@ -36,7 +36,7 @@ extract_json_field() {
     sed -n 's/.*"'$field_name'": \{0,1\}"\([^"]*\)".*/\1/p' $json_file | sed 's/^[[:space:]]*//g' | sed 's/[[:space:]]*$//g'
 }
 
-create_token() {
+create_signed_jwt() {
     local key_json_file="$1"
     local scope="$2"
     local valid_for_sec=60
@@ -55,11 +55,16 @@ create_token() {
     payload="${payload}\"iat\":${iat}"
     payload="{${payload}}"
 
+    #printf "%s\n" "$payload"
+    printf "JWT Payload:\n%s\n\n" "$payload" | sed 's/,/,\n  /g' | sed 's/{/{\n  /g' | sed 's/}/\n}/g'
+
     local header='{"alg":"RS256","typ":"JWT"}'
     local to_be_signed="$(b64_nopadding "$header").$(b64_nopadding "$payload")"
 
     local signature=$(openssl dgst -sha256 -sign <(printf -- "$private_key" "") <(printf "$to_be_signed") | base64 "$B64OPTION" | tr '/+' '_-' | tr -d '=')
-    printf "$to_be_signed.$signature"
+
+    # not local
+    jwt="$to_be_signed.$signature"
 }
 
 
@@ -67,7 +72,7 @@ create_token() {
 
 key_json_file="$1"
 scope="${2:-https://www.googleapis.com/auth/cloud-platform}"
-jwt=$(create_token "$key_json_file" "$scope")
+create_signed_jwt "$key_json_file" "$scope"
 
 OUTFILE=$(mktemp /tmp/get-gcp-access-token.out.XXXXXX)
 curl -s -X POST https://www.googleapis.com/oauth2/v4/token \
@@ -77,4 +82,7 @@ curl -s -X POST https://www.googleapis.com/oauth2/v4/token \
 token=$(extract_json_field "access_token" "$OUTFILE")
 [[ -f "$OUTFILE" ]] && rm "$OUTFILE"
 
-printf "%s\n" "$token"
+printf "token:\n%s\n" "$token"
+
+printf "\ntoken info:\n"
+curl -s -X GET "https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${token}"
