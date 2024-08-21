@@ -452,9 +452,6 @@ The pre-requisities here are:
 * date, sed, tr
 * openssl
 
-
-xxx
-
 To set up, you need a service account JSON file containing the private key of
 the service account.
 
