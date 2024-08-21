@@ -309,20 +309,25 @@ There are currently these examples here:
   an access token using a service account key (*see note below).
 
 * [**getTokenWithUserAuth.js**](./node/getTokenWithUserAuth/getTokenWithUserAuth.js)- a [nodejs](https://nodejs.org/en/) script
-  that gets an access token usable with Google APIs, using user
+  that gets an access token that is usable with Google APIs, using user
   authentication. This relies on a client that must be registered with Google IAM.
 
 * [**getTokenWithServiceAccount.js**](./node/getTokenWithServiceAccount/getTokenWithServiceAccount.js) - a [nodejs](https://nodejs.org/en/)
-  script that gets an access token usable with Google APIs, using a service
+  script that gets an access token that is usable with Google APIs, using a service
   account key. (*see note below).
 
 * [**getToken.js**](./node/google-auth-library/getToken.js) - a [nodejs](https://nodejs.org/en/)
-  script that gets an access token usable with Google APIs, using a service
-  account key. (*see note below).
+  script that gets an access token that is usable with Google APIs, using a service
+  account key. (*see note below). This version uses the Google-provided [google-auth-library npm module](https://www.npmjs.com/package/google-auth-library).
 
 * [**GetAccessTokenForServiceAccount**](./dotnet/GetAccessTokenForServiceAccount) - a
   [dotnet](https://dotnet.microsoft.com/en-us/download) program that gets an
-  access token usable with Google APIs, using a service account key. (*see note
+  access token that is usable with Google APIs, using a service account key. (*see note
+  below).
+
+* [**GetTokenWithServiceAccount.java**](./java/src/main/java/com.google.examples.tokens/GetTokenWithServiceAccount.java) - a
+  java program that gets an
+  access token that is usable with Google APIs, using a service account key. (*see note
   below).
 
 
@@ -441,7 +446,7 @@ copy/paste experience.
 This shows case 2 from above - getting a token for a service account, in this
 case, from a bash script.
 
-The pre-requisities here are: 
+The pre-requisities here are:
 * curl
 * base64
 * date, sed, tr
@@ -604,8 +609,62 @@ Then, build and run the app. Follow these steps. I tested this on MacOS and Wind
      --sakeyfile ~/Downloads/my-downloaded-key-file.json
    ```
 
+## (java) GetTokenWithServiceAccount.java
 
+The pre-requisite here is a JDK v11 or later. And you need Apache maven v3.9 or later
 
+You need a service account key json file. To get it, follow the steps to
+generate and download a json key file, as described for the bash example for
+service accounts above. If you've already done it for the bash example, you do
+not need to repeat that setup for this example.
+
+Then, build and run the app. Follow these steps. I tested this on MacOS.
+
+1. verify your java version
+   ```
+   cd java
+   javac --version
+   ```
+
+   You should see v11.0.22 or later
+
+2. and verify your version of maven
+   ```
+   mvn --version
+   ```
+
+   You should see `Apache Maven 3.9.0` or later
+
+3. build
+   ```
+   mvn clean package
+   ```
+
+   This should show you some happy messages.
+
+3. run
+   ```
+   java -jar ./target/get-gcp-access-token-1.0.1.jar --creds YOUR_KEY_FILE.json
+
+   ```
+
+   The result should be a token:
+   ```
+   ya29.c.b0AXv0zTPIXDh-FGN_hM4e..many-characters..jN8H3fp50U
+   ```
+
+   You can then use that token as a Bearer token in API calls to
+   `*.googleapis.com` , subject to the roles and permissions the service account
+   has.
+
+   You can also tell the program to send the token to the tokeninfo endpoint: 
+   ```
+   java -jar ./target/get-gcp-access-token-1.0.1.jar --creds YOUR_KEY_FILE.json --inquire
+   ```
+
+   ...and you should see the token info output. 
+   
+   
 ## Disclaimer
 
 This example is not an official Google product, nor is it part of an
