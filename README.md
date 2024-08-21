@@ -288,11 +288,11 @@ necessary, and so on. I don't have any particuar insider knowledge of how gcloud
 is implemented, but I feel confident that gcloud invokes the same endpoints these
 example programs use, to get tokens.
 
-Currently the examples use nodejs and dotnet. They do not rely on the
+Currently the examples use java, nodejs, bash, and dotnet. Most of them do not rely on the
 Google-provided client libraries, just to make a point that you don't actually
 need those client libraries.  You can invoke the token-dispensing endpoint
 provided by Google Cloud, directly. I may add more examples later, maybe other
-languages and so on, as time permits.
+languages and so on.
 
 I hope the code here will be valuable in two ways:
 
@@ -301,7 +301,7 @@ I hope the code here will be valuable in two ways:
 
 2. the code shows the API flow, the sequence of calls to make. So people can
    start from this working example and buid code for other scripting
-   environments or platforms. Powershell, python, and etc.
+   environments or platforms. Powershell, python, groovy, and etc.
 
 There are currently these examples here:
 
