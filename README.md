@@ -545,14 +545,14 @@ Now, as often as you need to create a token, run these steps:
 
 ## (dotnet) GetAccessTokenForServiceAccount
 
-The pre-req here is the dotnet SDK, v7 or later.  Install that on your machine. On MacOS, I
+The pre-req here is the dotnet SDK, v8 or later.  Install that on your machine. On MacOS, I
 did this via homebrew:
 
 ```
 brew install --cask dotnet-sdk
 ```
 
-On Windows, I just downloaded the .NETSDK v7.0 and installed it.
+On Windows, I just downloaded the .NETSDK v8.0 and installed it.
 
 You need a service account key json file. To get it, follow the steps to
 generate and download a json key file, as described for the bash example for
@@ -567,7 +567,7 @@ Then, build and run the app. Follow these steps. I tested this on MacOS and Wind
    dotnet --version
    ```
 
-   I built and tested this with version `7.0.101`.
+   I built and tested this with version `8.0.401`.
 
 2. install pre-requisites
    ```
@@ -585,10 +585,10 @@ Then, build and run the app. Follow these steps. I tested this on MacOS and Wind
 
 3. run
    ```
-   bin/Debug/net7.0/Get-GCP-Token  --sakeyfile ~/Downloads/my-downloaded-key-file.json
+   bin/Debug/net8.0/Get-GCP-Token  --sakeyfile ~/Downloads/my-downloaded-key-file.json --verbose
    ```
 
-   The result should be a token:
+   The result should show you an access token, something like this:
    ```
    ya29.c.b0AXv0zTPIXDh-FGN_hM4e..many-characters..jN8H3fp50U
    ```
@@ -604,7 +604,7 @@ Then, build and run the app. Follow these steps. I tested this on MacOS and Wind
    ..then you may be able to avoid that by invoking the command with the `--roll-forward` option:
 
    ```
-   bin/Debug/net7.0/Get-GCP-Token \
+   bin/Debug/net8.0/Get-GCP-Token \
      --roll-forward \
      --sakeyfile ~/Downloads/my-downloaded-key-file.json
    ```
@@ -657,14 +657,14 @@ Then, build and run the app. Follow these steps. I tested this on MacOS.
    `*.googleapis.com` , subject to the roles and permissions the service account
    has.
 
-   You can also tell the program to send the token to the tokeninfo endpoint: 
+   You can also tell the program to send the token to the tokeninfo endpoint:
    ```
    java -jar ./target/get-gcp-access-token-1.0.1.jar --creds YOUR_KEY_FILE.json --inquire
    ```
 
-   ...and you should see the token info output. 
-   
-   
+   ...and you should see the token info output.
+
+
 ## Disclaimer
 
 This example is not an official Google product, nor is it part of an

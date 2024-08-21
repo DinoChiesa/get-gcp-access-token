@@ -70,7 +70,7 @@ namespace Google.AccessTokensExamples.ServiceAccount
             break;
 
           case "--verbose":
-            _verbose = false;
+            _verbose = true;
             break;
 
           case "-?":
@@ -158,6 +158,13 @@ namespace Google.AccessTokensExamples.ServiceAccount
       if (_verbose)
       {
         Console.WriteLine("\naccess_token: \n"+ accessToken);
+        using (var httpClient = new HttpClient())
+        {
+          var uri = "https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=" + accessToken;
+          HttpResponseMessage response2 = httpClient.GetAsync(uri).Result;
+          var responseBody = response2.Content.ReadAsStringAsync().Result;
+          Console.WriteLine("\ntoken info: \n"+ responseBody);
+        }
       }
       else
       {
