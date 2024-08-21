@@ -1,7 +1,7 @@
 // getTokenWithServiceAccount.js
 // ------------------------------------------------------------------
 //
-// Copyright 2019-2023 Google LLC.
+// Copyright 2019-2024 Google LLC.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -136,6 +136,19 @@ function usage() {
   console.log(`usage:\n  node ${basename} --keyfile SERVICE_ACCOUNT_KEYFILE\n`);
 }
 
+async function showTokenInfo(payload) {
+  const response = await fetch(
+      `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${payload.access_token}`,
+      {
+        method: "get",
+        body: null,
+        headers: {}
+      }
+    ),
+    body = await response.json();
+  console.log("\ntoken info:\n" + JSON.stringify(body, null, 2));
+}
+
 function main(args) {
   try {
     const options = processArgs(args);
@@ -146,7 +159,13 @@ function main(args) {
       }
       getGoogleAuthJwt({ options })
         .then(redeemJwtForAccessToken)
-        .then((payload) => console.log(JSON.stringify(payload, null, 2)))
+        .then(
+          (payload) => (
+            console.log("token response:\n" + JSON.stringify(payload, null, 2)),
+            payload
+          )
+        )
+        .then((payload) => options.verbose && showTokenInfo(payload))
         .catch((e) => console.log(util.format(e)));
     } else {
       usage();
